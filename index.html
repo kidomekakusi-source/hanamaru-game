@@ -1,0 +1,204 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>きょうも、はなまる！</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#eaf7f6;color:#46545b;font-family:sans-serif}
+.app{max-width:520px;margin:auto;min-height:100vh;background:#fffdf8;padding:18px}
+header{text-align:center;padding:12px}
+h1{font-size:25px;color:#69aaa8;margin:4px}
+.sub{font-size:12px;color:#94a5a2}
+.room{height:265px;border-radius:22px;background:linear-gradient(#d9f0ef 0 70%,#eadcc9 70%);position:relative;overflow:hidden;margin:12px 0}
+.window{position:absolute;top:20px;left:18px;width:105px;height:100px;background:#fff;border:7px solid #fff;border-radius:10px;box-shadow:0 0 0 2px #b5d9d5}
+.window:after{content:"";position:absolute;left:43px;top:0;height:100%;border-left:3px solid #b5d9d5}
+.window:before{content:"";position:absolute;top:44px;width:100%;border-top:3px solid #b5d9d5}
+.sun{position:absolute;top:30px;right:35px;font-size:28px}
+.character{position:absolute;left:50%;top:53%;transform:translate(-50%,-50%);text-align:center}
+.girl{font-size:88px;filter:drop-shadow(0 5px 2px #0001)}
+.name{font-weight:bold;color:#598f8c;font-size:17px}
+.plush{position:absolute;bottom:10px;font-size:35px}
+.p1{left:18px}.p2{right:20px}
+.speech{background:#fff;border:2px solid #d7ece8;border-radius:18px;padding:14px;margin:12px 0;line-height:1.7;min-height:75px}
+.panel{background:#f4f9f7;border-radius:16px;padding:14px;margin:12px 0}
+input,textarea{width:100%;padding:12px;border:1px solid #cbded9;border-radius:12px;font-size:16px;background:white;color:#46545b}
+button{border:0;border-radius:13px;padding:12px 15px;background:#79b9b1;color:white;font-size:15px;font-weight:bold;cursor:pointer}
+button.secondary{background:#e4efec;color:#527c78}
+button:active{opacity:.7}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.actions button{flex:1;min-width:100px}
+.chatrow{display:flex;gap:8px;margin-top:8px}
+.chatrow input{flex:1;min-width:0}
+.chatrow button{white-space:nowrap}
+.log{font-size:13px;line-height:1.8;max-height:130px;overflow:auto}
+.small{font-size:12px;color:#91a19d}
+footer{text-align:center;color:#a4b4af;font-size:11px;padding:15px}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="sub">あなたとまる。の小さなお部屋</div>
+  <h1>きょうも、はなまる！</h1>
+  <div class="sub" id="today"></div>
+</header>
+
+<div class="room">
+  <div class="window"></div>
+  <div class="sun">☀️</div>
+  <div class="character">
+    <div class="girl">👧🏻</div>
+    <div class="name">まる。</div>
+  </div>
+  <div class="plush p1">🐻‍❄️</div>
+  <div class="plush p2">🦭</div>
+</div>
+
+<div class="speech" id="speech">
+  やっほ〜！来てくれてありがとう！<br>
+  今日も一緒にのんびりしよな〜！🌷
+</div>
+
+<div class="panel">
+  <b>🌷 まる。とおしゃべり</b>
+  <div class="chatrow">
+    <input id="message" placeholder="今日あったことを話してね">
+    <button onclick="sendMessage()">送る</button>
+  </div>
+  <div class="actions">
+    <button class="secondary" onclick="quick('おはよう！')">おはよう</button>
+    <button class="secondary" onclick="quick('ちょっと疲れた')">疲れた〜</button>
+    <button class="secondary" onclick="quick('特に何もなかった')">何もなかった</button>
+  </div>
+</div>
+
+<div class="panel">
+  <b>💮 今日のはなまる</b>
+  <p id="maruText">今日も生きててえらい！それだけで満点やで〜！</p>
+  <button onclick="giveMaru()">今日のはなまるを押す 💮</button>
+  <p class="small" id="maruCount">これまでのはなまる：0個</p>
+</div>
+
+<div class="panel">
+  <b>📖 今日のひとこと日記</b>
+  <textarea id="diary" rows="3" placeholder="今日の出来事や気持ちを書いてみよう"></textarea>
+  <div class="actions">
+    <button onclick="saveDiary()">日記を保存</button>
+  </div>
+  <p class="small" id="diaryStatus"></p>
+</div>
+
+<div class="panel">
+  <b>🌼 あなたのこと</b>
+  <p class="small">まる。に呼んでほしい名前を設定してね。</p>
+  <div class="chatrow">
+    <input id="playerName" placeholder="呼んでほしい名前">
+    <button onclick="saveName()">保存</button>
+  </div>
+</div>
+
+<div class="panel">
+  <b>💬 今日のおしゃべり記録</b>
+  <div class="log" id="history">まだおしゃべりしてないよ。</div>
+</div>
+
+<footer>まる。と一緒に、今日もはなまる。🌷</footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const today = new Date().toLocaleDateString("ja-JP");
+$("today").textContent = today;
+
+let player = localStorage.getItem("playerName") || "";
+let count = Number(localStorage.getItem("maruCount") || 0);
+let lastMaru = localStorage.getItem("lastMaru") || "";
+let history = JSON.parse(localStorage.getItem("chatHistory") || "[]");
+
+$("playerName").value = player;
+$("maruCount").textContent = "これまでのはなまる：" + count + "個";
+$("history").innerHTML = history.length ? history.slice(-12).join("<br>") : "まだおしゃべりしてないよ。";
+
+if(localStorage.getItem("diaryDate") === today){
+  $("diary").value = localStorage.getItem("diary") || "";
+}
+
+function saveName(){
+  player = $("playerName").value.trim();
+  if(!player){alert("名前を入力してね！");return;}
+  localStorage.setItem("playerName",player);
+  talk("やった〜！これから「"+player+"」って呼ぶな！よろしくやで〜！🌷");
+}
+
+function talk(text){
+  $("speech").textContent = text;
+}
+
+function quick(text){
+  $("message").value = text;
+  sendMessage();
+}
+
+function sendMessage(){
+  const msg = $("message").value.trim();
+  if(!msg)return;
+  const m = msg.toLowerCase();
+  const who = player ? player + "、" : "";
+  let reply;
+
+  if(/疲|しんど|つら|だる|眠/.test(m)){
+    reply = "そっかぁ、今日はしんどかったんやなぁ。無理せんでええからね。ここではゆっくりしていき〜。";
+  }else if(/何も|なにも|何もし|できなかっ/.test(m)){
+    reply = "何もない日もええやん！今日もちゃんと生きてたんやから、はなまるやで〜！💮";
+  }else if(/嬉|うれ|楽しかっ|最高/.test(m)){
+    reply = "え〜！それめっちゃええやん！うちまで嬉しくなってきたわ〜！";
+  }else if(/悲|かな|泣|寂|さみ/.test(m)){
+    reply = "そっかぁ…。そんな気持ちの日もあるよな。無理に元気出さんでええよ。ここで話聞くで。";
+  }else if(/おはよう/.test(m)){
+    reply = "おはよ〜！今日も会えたな！ぼちぼちいこか〜！☀️";
+  }else if(/おやすみ|寝る/.test(m)){
+    reply = "おやすみ〜！今日も一日おつかれさま。あったかくして寝るんやで〜！🌙";
+  }else if(/好き/.test(m)){
+    reply = "えへへ、ありがとう！うちもこうしてお話しできるん嬉しいで〜！";
+  }else if(/こんにちは|やっほ|ただいま/.test(m)){
+    reply = "おかえり〜！待ってたで！今日はどんな一日やった？";
+  }else{
+    reply = "へぇ〜！そうなんや！もうちょっと聞かせて〜！うち、そういうお話聞くの好きやで。";
+  }
+
+  $("speech").textContent = who + reply;
+  history.push("あなた："+msg);
+  history.push("まる。："+reply);
+  localStorage.setItem("chatHistory",JSON.stringify(history));
+  $("history").innerHTML = history.slice(-12).join("<br>");
+  $("message").value = "";
+}
+
+function giveMaru(){
+  if(lastMaru === today){
+    talk("今日のはなまるはもう押してくれたで〜！今日も生きててえらいっ！💮");
+    return;
+  }
+  count++;
+  lastMaru = today;
+  localStorage.setItem("maruCount",count);
+  localStorage.setItem("lastMaru",today);
+  $("maruCount").textContent = "これまでのはなまる：" + count + "個";
+  talk("今日のはなまる、受け取ったで〜！💮 "+(player ? player+"、" : "")+"今日も生きててえらい！大優勝や！");
+}
+
+function saveDiary(){
+  localStorage.setItem("diary", $("diary").value);
+  localStorage.setItem("diaryDate",today);
+  $("diaryStatus").textContent = "保存したよ！またいつでも書きに来てな〜🌷";
+}
+
+if(player){
+  talk("おかえり〜！"+player+"！今日も会えて嬉しいで〜！🌷");
+}
+</script>
+</body>
+</html>
