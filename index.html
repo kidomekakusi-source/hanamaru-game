@@ -77,23 +77,18 @@ footer{text-align:center;color:#a4b4af;font-size:11px;padding:15px}
   </div>
 </div>
 
+
 <div class="speech" id="speech">
-  やっほ〜！来てくれてありがとう！<br>
+  やっほ〜！来てくれてありがとう！
   今日も一緒にのんびりしよな〜！🌷
 </div>
 
 <div class="panel">
   <b>🌷 まる。とおしゃべり</b>
-  <div class="chatrow">
-    <input id="message" placeholder="今日あったことを話してね">
-    <button onclick="sendMessage()">送る</button>
-  </div>
-  <div class="actions">
-    <button class="secondary" onclick="quick('おはよう！')">おはよう</button>
-    <button class="secondary" onclick="quick('ちょっと疲れた')">疲れた〜</button>
-    <button class="secondary" onclick="quick('特に何もなかった')">何もなかった</button>
-  </div>
+  <p class="small">お話ししたいことを選んでね！</p>
+  <div class="actions" id="chatOptions"></div>
 </div>
+
 
 <div class="panel">
   <b>💮 今日のはなまる</b>
@@ -128,9 +123,11 @@ footer{text-align:center;color:#a4b4af;font-size:11px;padding:15px}
 <footer>まる。と一緒に、今日もはなまる。🌷</footer>
 </div>
 
+
 <script>
 const $ = id => document.getElementById(id);
 const today = new Date().toLocaleDateString("ja-JP");
+
 $("today").textContent = today;
 
 let player = localStorage.getItem("playerName") || "";
@@ -140,85 +137,1378 @@ let history = JSON.parse(localStorage.getItem("chatHistory") || "[]");
 
 $("playerName").value = player;
 $("maruCount").textContent = "これまでのはなまる：" + count + "個";
-$("history").innerHTML = history.length ? history.slice(-12).join("<br>") : "まだおしゃべりしてないよ。";
 
-if(localStorage.getItem("diaryDate") === today){
+function escapeHTML(text) {
+  return String(text).replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
+
+function updateHistory() {
+  $("history").innerHTML = history.length
+    ? history.slice(-12).map(escapeHTML).join("<br>")
+    : "まだおしゃべりしてないよ。";
+
+  localStorage.setItem("chatHistory", JSON.stringify(history));
+}
+
+updateHistory();
+
+if (localStorage.getItem("diaryDate") === today) {
   $("diary").value = localStorage.getItem("diary") || "";
 }
 
-function saveName(){
-  player = $("playerName").value.trim();
-  if(!player){alert("名前を入力してね！");return;}
-  localStorage.setItem("playerName",player);
-  talk("やった〜！これから「"+player+"」って呼ぶな！よろしくやで〜！🌷");
-}
-
-function talk(text){
+function talk(text) {
   $("speech").textContent = text;
 }
 
-function quick(text){
-  $("message").value = text;
-  sendMessage();
+function addLog(text) {
+  history.push(text);
+  updateHistory();
 }
 
-function sendMessage(){
-  const msg = $("message").value.trim();
-  if(!msg)return;
-  const m = msg.toLowerCase();
-  const who = player ? player + "、" : "";
-  let reply;
+function saveName() {
+  player = $("playerName").value.trim();
 
-  if(/疲|しんど|つら|だる|眠/.test(m)){
-    reply = "そっかぁ、今日はしんどかったんやなぁ。無理せんでええからね。ここではゆっくりしていき〜。";
-  }else if(/何も|なにも|何もし|できなかっ/.test(m)){
-    reply = "何もない日もええやん！今日もちゃんと生きてたんやから、はなまるやで〜！💮";
-  }else if(/嬉|うれ|楽しかっ|最高/.test(m)){
-    reply = "え〜！それめっちゃええやん！うちまで嬉しくなってきたわ〜！";
-  }else if(/悲|かな|泣|寂|さみ/.test(m)){
-    reply = "そっかぁ…。そんな気持ちの日もあるよな。無理に元気出さんでええよ。ここで話聞くで。";
-  }else if(/おはよう/.test(m)){
-    reply = "おはよ〜！今日も会えたな！ぼちぼちいこか〜！☀️";
-  }else if(/おやすみ|寝る/.test(m)){
-    reply = "おやすみ〜！今日も一日おつかれさま。あったかくして寝るんやで〜！🌙";
-  }else if(/好き/.test(m)){
-    reply = "えへへ、ありがとう！うちもこうしてお話しできるん嬉しいで〜！";
-  }else if(/こんにちは|やっほ|ただいま/.test(m)){
-    reply = "おかえり〜！待ってたで！今日はどんな一日やった？";
-  }else{
-    reply = "へぇ〜！そうなんや！もうちょっと聞かせて〜！うち、そういうお話聞くの好きやで。";
+  if (!player) {
+    alert("名前を入力してね！");
+    return;
   }
 
-  $("speech").textContent = who + reply;
-  history.push("あなた："+msg);
-  history.push("まる。："+reply);
-  localStorage.setItem("chatHistory",JSON.stringify(history));
-  $("history").innerHTML = history.slice(-12).join("<br>");
-  $("message").value = "";
+  localStorage.setItem("playerName", player);
+  talk("やった〜！これから「" + player + "」って呼ぶな！よろしくやで〜！🌷");
 }
 
-function giveMaru(){
-  if(lastMaru === today){
+function giveMaru() {
+  if (lastMaru === today) {
     talk("今日のはなまるはもう押してくれたで〜！今日も生きててえらいっ！💮");
     return;
   }
+
   count++;
   lastMaru = today;
-  localStorage.setItem("maruCount",count);
-  localStorage.setItem("lastMaru",today);
+
+  localStorage.setItem("maruCount", count);
+  localStorage.setItem("lastMaru", today);
+
   $("maruCount").textContent = "これまでのはなまる：" + count + "個";
-  talk("今日のはなまる、受け取ったで〜！💮 "+(player ? player+"、" : "")+"今日も生きててえらい！大優勝や！");
+
+  talk("今日のはなまる、受け取ったで〜！💮 " +
+    (player ? player + "、" : "") +
+    "今日も生きててえらい！大優勝や！");
 }
 
-function saveDiary(){
+function saveDiary() {
   localStorage.setItem("diary", $("diary").value);
-  localStorage.setItem("diaryDate",today);
+  localStorage.setItem("diaryDate", today);
   $("diaryStatus").textContent = "保存したよ！またいつでも書きに来てな〜🌷";
 }
 
-if(player){
-  talk("おかえり〜！"+player+"！今日も会えて嬉しいで〜！🌷");
+/* --------------------------------
+   まる。との会話データ
+-------------------------------- */
+
+const topics = [
+  { label: "☀️ 今日の出来事", node: "daily" },
+  { label: "☕ なんでもない雑談", node: "chat" },
+  { label: "🎮 趣味・好きなもの", node: "hobby" },
+  { label: "🌧️ 悩み・気持ち", node: "feelings" },
+  { label: "🤣 面白い話", node: "funny" },
+  { label: "💗 癒やされたい", node: "comfort" },
+  { label: "🌙 寝る前のお話", node: "bedtime" },
+  { label: "🎲 まる。におまかせ", node: "random" }
+];
+
+const conversations = {
+
+  /* 今日の出来事 */
+  daily: {
+    replies: [
+      "今日はどんな一日やった〜？うちに聞かせてほしいな！",
+      "おかえり〜！今日は何して過ごしてたん？",
+      "今日のこと、ゆっくり聞かせてや〜！"
+    ],
+    options: [
+      { label: "いいことがあった！", next: "daily_good" },
+      { label: "ちょっと大変だった", next: "daily_hard" },
+      { label: "特に何もなかった", next: "daily_nothing" },
+      { label: "まだ一日が始まったばかり", next: "daily_start" }
+    ]
+  },
+
+  daily_good: {
+    replies: [
+      "おお〜！ええやんええやん！何があったん？うちにも教えて〜！",
+      "それは嬉しいなぁ！どんなことやったん？",
+      "いい日になったんやね！うちまでにこにこしてきたわ〜！"
+    ],
+    options: [
+      { label: "もっと聞いてほしい！", next: "daily_more" },
+      { label: "まる。にもいいことあった？", next: "maru_good" },
+      { label: "次は別の話をしよう", next: "chat" }
+    ]
+  },
+
+  daily_more: {
+    replies: [
+      "うんうん！それでそれで？続きが気になるで〜！",
+      "ええなぁ、そういう話もっと聞きたい！",
+      "ふふっ、楽しそうやなぁ。もうちょっと教えて！"
+    ],
+    options: [
+      { label: "実はね……", next: "daily_more2" },
+      { label: "聞いてくれてありがとう", next: "thanks" },
+      { label: "別の話にする", next: "chat" }
+    ]
+  },
+
+  daily_more2: {
+    replies: [
+      "そっかそっか！話してくれてありがとうな〜！",
+      "なるほどなぁ。そういうことやったんやね！",
+      "うんうん、ちゃんと聞いてるで〜！"
+    ],
+    options: [
+      { label: "もう少し話す", next: "daily_more" },
+      { label: "まる。はどう思う？", next: "maru_think" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  daily_hard: {
+    replies: [
+      "そっかぁ、今日は大変やったんやな。ほんまおつかれさま。",
+      "うわぁ、それは疲れちゃうなぁ。よう頑張ったね。",
+      "大変な日もあるよなぁ。ここではゆっくりしていきや〜。"
+    ],
+    options: [
+      { label: "ちょっと話を聞いてほしい", next: "feel_talk" },
+      { label: "今日はもう休みたい", next: "rest" },
+      { label: "別の話で気分転換したい", next: "funny" }
+    ]
+  },
+
+  daily_nothing: {
+    replies: [
+      "何もない日もええやん！今日も生きてたんやから、はなまるやで〜！💮",
+      "平和がいちばんや〜。のんびりできたならそれも素敵やん！",
+      "そっかぁ。何もない日って、案外大事やと思うで〜！"
+    ],
+    options: [
+      { label: "のんびりしてたよ", next: "relax" },
+      { label: "ちょっと退屈だった", next: "bored" },
+      { label: "まる。と雑談したい", next: "chat" }
+    ]
+  },
+
+  daily_start: {
+    replies: [
+      "おっ、これからなんやね！今日もぼちぼちいこか〜！",
+      "そっかそっか！まだ始まったばっかりやなぁ。",
+      "ほな、今日も無理せず自分のペースでいこ〜！"
+    ],
+    options: [
+      { label: "今日は何しようかな", next: "plans" },
+      { label: "まだ眠たい……", next: "sleepy" },
+      { label: "まる。とおしゃべりする！", next: "chat" }
+    ]
+  },
+
+  /* なんでもない雑談 */
+  chat: {
+    replies: [
+      "えへへ、雑談タイムやな〜！何でもない話って楽しいよなぁ。",
+      "よっしゃ！のんびりおしゃべりしよ〜！",
+      "うちはこういうゆるい時間、けっこう好きやで〜！"
+    ],
+    options: [
+      { label: "好きな食べ物の話", next: "food" },
+      { label: "最近ハマってるもの", next: "recent" },
+      { label: "もしも○○だったら？", next: "whatif" },
+      { label: "まる。のことを知りたい", next: "about_maru" }
+    ]
+  },
+
+  food: {
+    replies: [
+      "食べ物の話や〜！考えてたらお腹すいてきた……。",
+      "ええなぁ！おいしいものの話は幸せになるなぁ。",
+      "うちは甘いものも好きやけど、しょっぱいおやつも捨てがたい！"
+    ],
+    options: [
+      { label: "甘いものが好き！", next: "sweet" },
+      { label: "しょっぱいものが好き！", next: "salty" },
+      { label: "まる。は何が好き？", next: "maru_food" }
+    ]
+  },
+
+  sweet: {
+    replies: [
+      "甘いものええよなぁ！ケーキとかアイスとか、選ぶ時間も楽しいわ〜！",
+      "わかる〜！甘いものってちょっと幸せな気持ちになるよな！"
+    ],
+    options: [
+      { label: "アイスが好き！", next: "icecream" },
+      { label: "ケーキが好き！", next: "cake" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  salty: {
+    replies: [
+      "しょっぱい系！ええやん！ポテチとか止まらんくなるやつや〜！",
+      "わかるわぁ。塩気のあるおやつって無性に食べたくなるよな！"
+    ],
+    options: [
+      { label: "ポテチが好き！", next: "snack" },
+      { label: "おつまみ系が好き！", next: "snack" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  maru_food: {
+    replies: [
+      "うちはねぇ……あったかいお団子とか好きそう！もちもちしてるやつ！",
+      "ん〜、今はふわふわのパンケーキが食べたい気分やなぁ……！"
+    ],
+    options: [
+      { label: "一緒に食べたいね！", next: "together_food" },
+      { label: "他にも好きなものある？", next: "maru_food" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  together_food: {
+    replies: [
+      "えへへ、一緒におやつタイムやな〜！想像しただけで楽しいわ！",
+      "ええなぁ！おいしいもの食べながら、ずっとおしゃべりしたいな〜！"
+    ],
+    options: [
+      { label: "飲み物も用意しよう！", next: "drink" },
+      { label: "また食べ物の話しよ", next: "food" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  drink: {
+    replies: [
+      "うちはあったかいミルクがええなぁ。ほっとするやつ！",
+      "飲み物かぁ！甘いココアもいいし、紅茶もいいなぁ……迷う！"
+    ],
+    options: [
+      { label: "ココアいいね！", next: "relax" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  recent: {
+    replies: [
+      "最近ハマってるものかぁ！時間を忘れちゃうものってあるよな〜。",
+      "おっ、気になる！どんなものにハマってるん？"
+    ],
+    options: [
+      { label: "ゲーム！", next: "game" },
+      { label: "音楽！", next: "music" },
+      { label: "アニメ・漫画！", next: "anime" },
+      { label: "それ以外！", next: "hobby_other" }
+    ]
+  },
+
+  whatif: {
+    replies: [
+      "もしも話やな！こういうの考えるの楽しいよな〜！",
+      "おっ、想像の世界や！どんなお話になるんやろ〜？"
+    ],
+    options: [
+      { label: "一日だけ空を飛べたら？", next: "fly" },
+      { label: "宝くじが当たったら？", next: "lottery" },
+      { label: "好きな場所に行けるなら？", next: "travel" }
+    ]
+  },
+
+  about_maru: {
+    replies: [
+      "うちのこと？えへへ、ちょっと照れるなぁ……！",
+      "まる。のこと気になるん？なんでも聞いてや〜！"
+    ],
+    options: [
+      { label: "好きなものは？", next: "maru_food" },
+      { label: "休みの日は何してる？", next: "maru_day" },
+      { label: "どんな性格？", next: "maru_personality" }
+    ]
+  },
+
+  maru_day: {
+    replies: [
+      "休みの日は、お部屋でごろごろしたり、好きな音楽を聴いたりしてるで〜。",
+      "お布団でぬくぬくしながら、のんびり過ごすのが好きやなぁ。"
+    ],
+    options: [
+      { label: "うちもごろごろ好き！", next: "relax" },
+      { label: "音楽は何を聴くの？", next: "music" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  maru_personality: {
+    replies: [
+      "ん〜、のんびり屋さんかなぁ。あと、ちょっと眠たがりかも……。",
+      "人のお話を聞くのが好きやで！たまにぼーっとしちゃうけどなぁ。"
+    ],
+    options: [
+      { label: "そんなところもいいね", next: "thanks" },
+      { label: "もっと教えて！", next: "about_maru" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  /* 趣味・好きなもの */
+  hobby: {
+    replies: [
+      "趣味のお話や〜！好きなものの話って、ついつい夢中になるよな！",
+      "おっ、好きなものの話やな！いっぱい聞かせてほしいわ〜！"
+    ],
+    options: [
+      { label: "ゲーム", next: "game" },
+      { label: "音楽", next: "music" },
+      { label: "アニメ・漫画", next: "anime" },
+      { label: "車・バイク・乗り物", next: "vehicles" }
+    ]
+  },
+
+  game: {
+    replies: [
+      "ゲームええなぁ！気づいたら何時間も経ってたりするよな〜！",
+      "おっ、ゲーム！どんなジャンルが好きなん？"
+    ],
+    options: [
+      { label: "アクション・冒険系", next: "game_action" },
+      { label: "育成・のんびり系", next: "game_casual" },
+      { label: "対戦・協力系", next: "game_compete" },
+      { label: "まる。はゲームする？", next: "maru_game" }
+    ]
+  },
+
+  game_action: {
+    replies: [
+      "アクション系！冒険して強くなっていく感じ、ワクワクするなぁ！",
+      "ええやん！難しいところをクリアできた時って嬉しいよな〜！"
+    ],
+    options: [
+      { label: "難しいゲームが好き！", next: "game_hard" },
+      { label: "ストーリー重視！", next: "game_story" },
+      { label: "別の趣味の話をする", next: "hobby" }
+    ]
+  },
+
+  game_casual: {
+    replies: [
+      "のんびり遊べるゲームもええなぁ。自分のペースで楽しめるのが好き！",
+      "育てたり集めたりするのって、ついつい続けちゃうよな〜！"
+    ],
+    options: [
+      { label: "集めるのが好き！", next: "game_collect" },
+      { label: "自分の世界を作るのが好き！", next: "game_build" },
+      { label: "別の趣味の話をする", next: "hobby" }
+    ]
+  },
+
+  game_compete: {
+    replies: [
+      "対戦も協力も盛り上がるよなぁ！一緒に遊ぶと楽しさ倍増や！",
+      "勝っても負けても、わいわい遊べるのってええよな〜！"
+    ],
+    options: [
+      { label: "勝つとめっちゃ嬉しい！", next: "game_win" },
+      { label: "友達と遊ぶのが好き！", next: "game_friends" },
+      { label: "別の趣味の話をする", next: "hobby" }
+    ]
+  },
+
+  maru_game: {
+    replies: [
+      "うちはゲーム実況を見るのが好きそうやなぁ。横で応援する係！",
+      "ゲームはまだまだ初心者やけど、楽しそうなのはいっぱい知ってるで〜！"
+    ],
+    options: [
+      { label: "応援してほしい！", next: "cheer" },
+      { label: "一緒に遊べたらいいね", next: "together_food" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  music: {
+    replies: [
+      "音楽ええなぁ！好きな曲って何回聴いても飽きへんよな〜。",
+      "うちも音楽好きやで！気分に合わせて聴く曲変えたりするなぁ。"
+    ],
+    options: [
+      { label: "ロック・バンド系", next: "music_rock" },
+      { label: "落ち着く曲・バラード", next: "music_calm" },
+      { label: "音楽を演奏するのが好き", next: "music_play" }
+    ]
+  },
+
+  music_rock: {
+    replies: [
+      "ロック！かっこええなぁ！ベースやドラムが響くとテンション上がるわ〜！",
+      "ええやん！ライブで聴いたらもっと迫力ありそうやなぁ！"
+    ],
+    options: [
+      { label: "ライブに行ってみたい！", next: "music_live" },
+      { label: "好きな曲を語りたい！", next: "music_talk" },
+      { label: "別の趣味の話をする", next: "hobby" }
+    ]
+  },
+
+  music_calm: {
+    replies: [
+      "落ち着く曲ってええよなぁ。夜に聴くと、なんだか安心するわ。",
+      "ゆったりした曲を流して、ぼーっとする時間も大事やね〜。"
+    ],
+    options: [
+      { label: "夜に聴くのが好き", next: "music_night" },
+      { label: "おすすめを教えて！", next: "music_talk" },
+      { label: "別の趣味の話をする", next: "hobby" }
+    ]
+  },
+
+  music_play: {
+    replies: [
+      "演奏できるんや！すごいやん！好きな曲を自分で弾けるって素敵やなぁ。",
+      "楽器って練習するほどできることが増えるんやろなぁ。かっこええ！"
+    ],
+    options: [
+      { label: "練習中の曲があるよ", next: "music_practice" },
+      { label: "なかなか上達しない……", next: "music_encourage" },
+      { label: "別の趣味の話をする", next: "hobby" }
+    ]
+  },
+
+  anime: {
+    replies: [
+      "アニメ・漫画のお話や〜！好きな作品って何回でも語れちゃうよな！",
+      "おっ、作品のお話！どんなジャンルが好きなん？"
+    ],
+    options: [
+      { label: "感動する作品", next: "anime_emotion" },
+      { label: "バトル・アクション", next: "anime_battle" },
+      { label: "ミステリー・考察系", next: "anime_mystery" }
+    ]
+  },
+
+  anime_emotion: {
+    replies: [
+      "感動する作品かぁ……。心に残るセリフとか、ずっと覚えてたりするよな。",
+      "泣ける作品って、見終わったあともしばらく余韻が残るよねぇ。"
+    ],
+    options: [
+      { label: "泣ける作品が好き", next: "anime_cry" },
+      { label: "好きな作品を語りたい", next: "anime_talk" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  anime_battle: {
+    replies: [
+      "バトルもの！迫力あるシーンとか、必殺技とか、見てて熱くなるなぁ！",
+      "強敵との戦いってワクワクするよな〜！"
+    ],
+    options: [
+      { label: "推しキャラがいる！", next: "anime_favorite" },
+      { label: "熱い展開が好き！", next: "anime_talk" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  anime_mystery: {
+    replies: [
+      "考察系！伏線に気づいた瞬間って気持ちいいよなぁ。",
+      "謎が少しずつ解けていくの、うちも好きやで〜！"
+    ],
+    options: [
+      { label: "伏線回収が好き！", next: "anime_talk" },
+      { label: "どんでん返しが好き！", next: "anime_talk" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  vehicles: {
+    replies: [
+      "車やバイクのお話や！見た目も音も、それぞれ個性があってええよなぁ。",
+      "乗り物ってロマンあるよな〜！眺めてるだけでも楽しいわ！"
+    ],
+    options: [
+      { label: "車が好き！", next: "car" },
+      { label: "バイクが好き！", next: "bike" },
+      { label: "ドライブ・ツーリングが好き！", next: "drive" }
+    ]
+  },
+
+  car: {
+    replies: [
+      "車かぁ！スポーツカーってフォルムがほんまにかっこええよなぁ。",
+      "ええなぁ！好きな車を眺めてるだけでも時間が過ぎちゃうね！"
+    ],
+    options: [
+      { label: "スポーツカーが好き！", next: "car_sports" },
+      { label: "好きな車について語りたい", next: "car_talk" },
+      { label: "別の趣味の話をする", next: "hobby" }
+    ]
+  },
+
+  bike: {
+    replies: [
+      "バイク！エンジン音とかシルエットとか、独特の魅力があるよなぁ。",
+      "風を感じながら走るのって気持ちよさそうやな〜！"
+    ],
+    options: [
+      { label: "好きな車種がある！", next: "bike_talk" },
+      { label: "ツーリングが好き！", next: "drive" },
+      { label: "別の趣味の話をする", next: "hobby" }
+    ]
+  },
+
+  /* 悩み・気持ち */
+  feelings: {
+    replies: [
+      "今日はどんな気持ちなん？無理に言葉にせんでもええからね。",
+      "うんうん、ここではゆっくりしていきや。どんな話でも聞くで。",
+      "話したくなったことからで大丈夫やで〜。"
+    ],
+    options: [
+      { label: "疲れちゃった", next: "tired" },
+      { label: "ちょっと悲しい", next: "sad" },
+      { label: "寂しい気分", next: "lonely" },
+      { label: "なんとなく不安", next: "anxious" }
+    ]
+  },
+
+  tired: {
+    replies: [
+      "そっかぁ、疲れちゃったんやなぁ。今日もほんまおつかれさま。",
+      "よう頑張ったねぇ。今は何もせんと休んでもええんやで。",
+      "疲れてるときは、ゆっくりするのがいちばんやと思うで〜。"
+    ],
+    options: [
+      { label: "何もする気が起きない", next: "no_energy" },
+      { label: "少し話を聞いてほしい", next: "feel_talk" },
+      { label: "気分転換したい", next: "funny" },
+      { label: "今日は休むね", next: "rest" }
+    ]
+  },
+
+  sad: {
+    replies: [
+      "そっかぁ……悲しい気持ちなんやね。無理に元気出さんでええよ。",
+      "そんな日もあるよなぁ。ここでは泣いてもええし、黙っててもええからね。",
+      "話してくれてありがとう。うちはちゃんと聞いてるで。"
+    ],
+    options: [
+      { label: "理由を聞いてほしい", next: "feel_talk" },
+      { label: "ただそばにいてほしい", next: "quiet" },
+      { label: "少し気を紛らわせたい", next: "funny" }
+    ]
+  },
+
+  lonely: {
+    replies: [
+      "寂しいときって、何とも言えへん気持ちになるよなぁ。",
+      "そっかぁ。ここに来てくれてありがとう。少しおしゃべりしよか。",
+      "無理に明るくせんでええよ。今の気持ちのままで大丈夫やで。"
+    ],
+    options: [
+      { label: "少し雑談したい", next: "chat" },
+      { label: "話を聞いてほしい", next: "feel_talk" },
+      { label: "静かに過ごしたい", next: "quiet" }
+    ]
+  },
+
+  anxious: {
+    replies: [
+      "なんとなく不安になる日もあるよなぁ。理由がはっきりせんこともあるし。",
+      "そっかぁ。今すぐ答えを出さんでもええと思うで。",
+      "まずはひと息つこか。ゆっくりで大丈夫やからね。"
+    ],
+    options: [
+      { label: "何が不安なのか話したい", next: "feel_talk" },
+      { label: "落ち着きたい", next: "calm" },
+      { label: "別の話で気分転換", next: "chat" }
+    ]
+  },
+
+  feel_talk: {
+    replies: [
+      "うん、聞くで。急がんでええから、話せるところから聞かせてな。",
+      "そっかそっか。ちゃんと受け止めたいから、ゆっくり話してな。",
+      "うまくまとまってなくても大丈夫やで。思ったままでええよ。"
+    ],
+    options: [
+      { label: "もう少し話す", next: "feel_talk" },
+      { label: "聞いてくれてありがとう", next: "thanks" },
+      { label: "少し休みたい", next: "rest" }
+    ]
+  },
+
+  no_energy: {
+    replies: [
+      "何もできへん日があってもええんよ。休むことも大事な時間やで。",
+      "動けないときは、動かなくても大丈夫。今日も生きてるだけで満点や！💮",
+      "今はエネルギー充電中なんやな。ゆっくりでええよ〜。"
+    ],
+    options: [
+      { label: "ちょっと安心した", next: "thanks" },
+      { label: "もう少し話したい", next: "feel_talk" },
+      { label: "横になって休む", next: "rest" }
+    ]
+  },
+
+  /* 面白い話 */
+  funny: {
+    replies: [
+      "おっ！笑いの時間やな！うち、変な話けっこう好きやで〜！",
+      "よっしゃ！ちょっと肩の力抜いていこか〜！",
+      "ふふっ、何か面白いこと起きへんかなぁ。"
+    ],
+    options: [
+      { label: "まる。の変な話が聞きたい", next: "joke" },
+      { label: "くだらない話をしよう", next: "silly" },
+      { label: "不思議な話がいい！", next: "weird" }
+    ]
+  },
+
+  joke: {
+    replies: [
+      "さっきな、寝ぼけて枕に『おはよう』って言うてもうた……。枕は無言やったわ。",
+      "うち、今日こそ早起きするって決めたんよ。……明日のうちに期待やな！",
+      "冷蔵庫を開けたらな、何取りに来たか忘れてん。冷蔵庫も困惑してたと思う。"
+    ],
+    options: [
+      { label: "それは面白いｗ", next: "silly" },
+      { label: "もっと聞きたい！", next: "joke" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  silly: {
+    replies: [
+      "もしも布団に足が生えて逃げ出したら……うちは追いかけずに新しい布団探すわ。",
+      "プリンが自分の意思で動けたら、冷蔵庫の中で王様になってそうやなぁ。",
+      "靴下って片方だけ消えるやん？あれ、絶対どこかで集会してると思うねん。"
+    ],
+    options: [
+      { label: "意味わからんくて好きｗ", next: "weird" },
+      { label: "自分も変な話がある！", next: "silly" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  weird: {
+    replies: [
+      "夜中の静かな部屋で、急に時計の音が大きく聞こえることない？あれ不思議やなぁ。",
+      "もしも月が毎晩ちょっとずつ近づいてきてたら……気づくまで普通に暮らしてそう。",
+      "世界中の猫が同じタイミングでこっちを見たら、何かの合図かもしれへんな……。"
+    ],
+    options: [
+      { label: "もっと不思議な話！", next: "weird" },
+      { label: "ちょっと怖いかもｗ", next: "joke" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  /* 癒やし・応援 */
+  comfort: {
+    replies: [
+      "よしよし、今日はここでのんびりしよな〜。うちが一緒におるで。",
+      "おつかれさま。今日もここに来てくれてありがとうなぁ。",
+      "今日は頑張らん日でもええんやで。ゆっくりしよ〜。"
+    ],
+    options: [
+      { label: "褒めてほしい！", next: "praise" },
+      { label: "何も考えず休みたい", next: "rest" },
+      { label: "応援してほしい", next: "cheer" },
+      { label: "静かにお話ししたい", next: "quiet" }
+    ]
+  },
+
+  praise: {
+    replies: [
+      "えらいえらい！今日もここまで過ごしてきたんやもん。十分すごいで〜！💮",
+      "今日も生きててえらい！何かできたかどうかなんて関係ないで！",
+      "よしよし！うちはちゃんと、今日のあなたにはなまるあげたいなぁ。"
+    ],
+    options: [
+      { label: "ありがとう！", next: "thanks" },
+      { label: "もっと褒めて！", next: "praise_more" },
+      { label: "今度は自分で頑張ってみる", next: "cheer" }
+    ]
+  },
+
+  praise_more: {
+    replies: [
+      "もちろんやで〜！今日もここに来てくれた！それだけでもう立派なことや！",
+      "何もできなくても、疲れてても、あなたの価値は変わらへんよ。大はなまる！💮",
+      "毎日完璧じゃなくてええんよ。今日のあなたもちゃんとえらい！"
+    ],
+    options: [
+      { label: "ちょっと元気出た！", next: "thanks" },
+      { label: "もう少し甘やかして", next: "praise" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  rest: {
+    replies: [
+      "うんうん、今日は休も〜。何もしない時間も大切やで。",
+      "お布団でごろごろするのも立派な予定や！",
+      "焦らんでええからね。ゆっくり休んでな〜。"
+    ],
+    options: [
+      { label: "少し落ち着いた", next: "thanks" },
+      { label: "もう少し話していたい", next: "quiet" },
+      { label: "おやすみを言う", next: "goodnight" }
+    ]
+  },
+
+  cheer: {
+    replies: [
+      "応援するで〜！あなたのペースで大丈夫！うちはいつでも味方やからな！",
+      "ふぁいと〜！でも無理は禁物やで。休憩も忘れんといてな！",
+      "一歩進めても、立ち止まっても大丈夫。どっちもちゃんと前に進んでるで！"
+    ],
+    options: [
+      { label: "頑張ってみる！", next: "thanks" },
+      { label: "今日は休むことにする", next: "rest" },
+      { label: "もう少し応援して！", next: "praise" }
+    ]
+  },
+
+  quiet: {
+    replies: [
+      "うん。無理に話さんでもええよ。ここで一緒にゆっくりしよ。",
+      "静かな時間もええなぁ。うちはここにおるで〜。",
+      "言葉が出てこない日もあるよな。そんな日も大丈夫やで。"
+    ],
+    options: [
+      { label: "ありがとう", next: "thanks" },
+      { label: "少し雑談したい", next: "chat" },
+      { label: "今日は休むね", next: "rest" }
+    ]
+  },
+
+  /* 寝る前 */
+  bedtime: {
+    replies: [
+      "もう寝る時間かなぁ？今日も一日おつかれさまやで〜。",
+      "夜のおしゃべりやな。あったかくして、ゆっくり過ごそ〜。",
+      "ふぁ〜……うちもちょっと眠たくなってきた……。"
+    ],
+    options: [
+      { label: "もう眠たい", next: "sleepy" },
+      { label: "なかなか眠れない", next: "cant_sleep" },
+      { label: "寝る前に少し話したい", next: "night_talk" }
+    ]
+  },
+
+  sleepy: {
+    replies: [
+      "そっかぁ。眠たいなら無理せず休んでな〜。今日もおつかれさま！",
+      "ふふっ、まぶたが重たくなってきたんやね。あったかくして寝よ〜。",
+      "今日はもうゆっくりしよか。明日のことは明日の自分に任せよ〜。"
+    ],
+    options: [
+      { label: "おやすみ！", next: "goodnight" },
+      { label: "あと少しだけ話す", next: "night_talk" }
+    ]
+  },
+
+  cant_sleep: {
+    replies: [
+      "眠れへん夜ってあるよなぁ。焦らんでも大丈夫やで。",
+      "目を閉じて、ゆっくり息を吐いてみよか。少しでも落ち着けますように。",
+      "眠れなくても、横になって体を休めるだけでええんよ。"
+    ],
+    options: [
+      { label: "少し落ち着いた", next: "quiet" },
+      { label: "もう少しお話ししたい", next: "night_talk" },
+      { label: "おやすみを言う", next: "goodnight" }
+    ]
+  },
+
+  night_talk: {
+    replies: [
+      "ええよ〜。眠くなるまで、のんびりおしゃべりしよな。",
+      "夜って不思議といろんなこと考えちゃうよなぁ。",
+      "うんうん、もうちょっと一緒におろか〜。"
+    ],
+    options: [
+      { label: "今日のことを振り返る", next: "daily" },
+      { label: "ゆるい雑談がしたい", next: "chat" },
+      { label: "やっぱり寝ようかな", next: "goodnight" }
+    ]
+  },
+
+  /* もしも・その他 */
+  fly: {
+    replies: [
+      "うちはまず雲の上でお昼寝したいなぁ……。ふわふわしてそう！",
+      "空を飛べたら、夜の星を近くで見てみたいな〜！"
+    ],
+    options: [
+      { label: "雲の上で寝たい！", next: "relax" },
+      { label: "世界中を旅したい！", next: "travel" },
+      { label: "別のもしも話をする", next: "whatif" }
+    ]
+  },
+
+  lottery: {
+    replies: [
+      "まずはおいしいものをいっぱい食べたいなぁ！あと、お部屋もかわいくしたい！",
+      "急に大金があったら、何に使うか考えるだけで一日終わりそうやなぁ。"
+    ],
+    options: [
+      { label: "好きなものを買いたい！", next: "shopping" },
+      { label: "旅行に行きたい！", next: "travel" },
+      { label: "別のもしも話をする", next: "whatif" }
+    ]
+  },
+
+  travel: {
+    replies: [
+      "旅行ええなぁ！知らない景色を見たり、おいしいもの食べたりしたいわ〜。",
+      "うちは海が見える静かな場所に行ってみたいなぁ。"
+    ],
+    options: [
+      { label: "海に行きたい！", next: "travel" },
+      { label: "自然がいっぱいの場所！", next: "travel" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  plans: {
+    replies: [
+      "予定を考えるのもええけど、無理に決めなくても大丈夫やで〜。",
+      "今日は何かひとつできたら十分！のんびり考えよか。"
+    ],
+    options: [
+      { label: "やりたいことがある！", next: "cheer" },
+      { label: "特に決まってない", next: "relax" },
+      { label: "今日は休みたい", next: "rest" }
+    ]
+  },
+
+  relax: {
+    replies: [
+      "のんびりできてええなぁ。そんな時間も大事にしよ〜。",
+      "ゆっくり過ごす日って、心の充電日みたいなもんやね！"
+    ],
+    options: [
+      { label: "まる。と雑談する", next: "chat" },
+      { label: "ちょっと休むね", next: "rest" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  bored: {
+    replies: [
+      "退屈なときって、何をしたらええか逆に迷うよなぁ。",
+      "ほな、うちとちょっと遊ぼ〜！"
+    ],
+    options: [
+      { label: "面白い話をして！", next: "funny" },
+      { label: "もしも話をしよう！", next: "whatif" },
+      { label: "趣味の話をしよう！", next: "hobby" }
+    ]
+  },
+
+  calm: {
+    replies: [
+      "まずは肩の力を抜いて、ゆっくり息を吐いてみよか。",
+      "大丈夫。今この瞬間だけを考えて、少しずつ落ち着いていこな。"
+    ],
+    options: [
+      { label: "少し落ち着いた", next: "thanks" },
+      { label: "もう少し話したい", next: "feel_talk" },
+      { label: "雑談で気分転換", next: "chat" }
+    ]
+  },
+
+  thanks: {
+    replies: [
+      "えへへ、どういたしまして〜！話してくれてうちも嬉しいで！",
+      "こちらこそありがとうなぁ。またいつでも来てや〜！",
+      "ふふっ、少しでも一緒に過ごせてよかったわ！"
+    ],
+    options: [
+      { label: "もう少しおしゃべり", next: "chat" },
+      { label: "別の話題を選ぶ", next: "topics" },
+      { label: "今日はここまで", next: "goodnight" }
+    ]
+  },
+
+  maru_good: {
+    replies: [
+      "うちは今、あなたが来てくれたことが嬉しいことやで〜！",
+      "さっきお部屋のクッションがちょうどいい位置にあってな、ちょっと幸せやった！"
+    ],
+    options: [
+      { label: "それはよかった！", next: "thanks" },
+      { label: "もっと聞かせて！", next: "about_maru" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  maru_think: {
+    replies: [
+      "うーん、そうやなぁ。自分の気持ちを大事にするのがええと思うで。",
+      "うちなら、焦らず一個ずつ考えるかなぁ。急がんでもええんよ。"
+    ],
+    options: [
+      { label: "なるほどね", next: "thanks" },
+      { label: "もう少し聞きたい", next: "feel_talk" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  icecream: {
+    replies: [
+      "アイスええなぁ！冷凍庫にあると嬉しくなるやつ！",
+      "うわぁ、アイス食べたくなってきた……。"
+    ],
+    options: [
+      { label: "好きな味は？", next: "maru_food" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  cake: {
+    replies: [
+      "ケーキ！ふわふわのスポンジにクリーム……想像だけで幸せや〜！",
+      "いちごの乗ったケーキって、見た目もかわいくて好きやなぁ。"
+    ],
+    options: [
+      { label: "いちごのケーキが好き！", next: "maru_food" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  snack: {
+    replies: [
+      "おやつって気づいたらなくなってるよなぁ。不思議やわ……。",
+      "好きなおやつを用意して、映画でも見たい気分やな〜！"
+    ],
+    options: [
+      { label: "映画の話をしよう", next: "chat" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  game_hard: {
+    replies: [
+      "難しいゲームを乗り越えたときの達成感って格別なんやろなぁ！",
+      "何回も挑戦してクリアするの、めっちゃかっこええと思うで！"
+    ],
+    options: [
+      { label: "クリアしたとき最高！", next: "game_win" },
+      { label: "別のゲームの話をする", next: "game" }
+    ]
+  },
+
+  game_story: {
+    replies: [
+      "ストーリー重視なんやね！物語に入り込めるゲームってええよなぁ。",
+      "エンディングのあとも余韻が残る作品って素敵やな〜。"
+    ],
+    options: [
+      { label: "忘れられない作品がある", next: "game_win" },
+      { label: "別のゲームの話をする", next: "game" }
+    ]
+  },
+
+  game_collect: {
+    replies: [
+      "集めるの楽しいよなぁ！あと一個で揃うってなると頑張っちゃう！",
+      "コレクションが増えていくのって、見てるだけで嬉しくなるね！"
+    ],
+    options: [
+      { label: "コンプリートしたい！", next: "game_win" },
+      { label: "別のゲームの話をする", next: "game" }
+    ]
+  },
+
+  game_build: {
+    replies: [
+      "自分の世界を作れるのって素敵やなぁ。どんな場所にするか考えるのも楽しそう！",
+      { label: "こだわりの建築とか作ってみたい！", next: "game_collect" }
+    ],
+    options: [
+      { label: "建築にこだわる！", next: "game_collect" },
+      { label: "別のゲームの話をする", next: "game" }
+    ]
+  },
+
+  game_win: {
+    replies: [
+      "やった〜！ってなる瞬間やな！その嬉しさ、ずっと覚えてたりするよね！",
+      "努力が報われる瞬間ってええなぁ。聞いてるうちも嬉しくなる！"
+    ],
+    options: [
+      { label: "もっとゲームの話！", next: "game" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  game_friends: {
+    replies: [
+      "友達と遊ぶのええなぁ！笑いながら遊ぶ時間って宝物やね！",
+      "協力して何かを達成するのって、ひとりとはまた違う楽しさがあるよな！"
+    ],
+    options: [
+      { label: "そうそう！", next: "game_win" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  music_live: {
+    replies: [
+      "ライブの音圧ってすごそうやなぁ！会場全体で盛り上がるの憧れるわ〜！",
+      "好きな曲を生で聴けたら、きっと忘れられへん思い出になるね！"
+    ],
+    options: [
+      { label: "好きなバンドがいる！", next: "music_talk" },
+      { label: "別の音楽の話をする", next: "music" }
+    ]
+  },
+
+  music_talk: {
+    replies: [
+      "もっと聞きたいなぁ！好きなものを語ってるときって、ほんま楽しそうやもん！",
+      "うんうん！その曲のどんなところが好きなん？"
+    ],
+    options: [
+      { label: "歌詞が好き！", next: "music_calm" },
+      { label: "音やメロディが好き！", next: "music_rock" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  music_night: {
+    replies: [
+      "夜に聴く音楽って、昼間とは違う感じがするよなぁ。",
+      "静かな夜に好きな曲を流す時間、うちも好きやで〜。"
+    ],
+    options: [
+      { label: "もう少し音楽の話", next: "music" },
+      { label: "寝る前のお話にする", next: "bedtime" }
+    ]
+  },
+
+  music_practice: {
+    replies: [
+      "おお〜！練習中なんやね！少しずつ弾けるようになるの嬉しいやろなぁ。",
+      "好きな曲を練習できるって素敵やね。焦らず楽しんでな〜！"
+    ],
+    options: [
+      { label: "練習が楽しい！", next: "cheer" },
+      { label: "別の音楽の話をする", next: "music" }
+    ]
+  },
+
+  music_encourage: {
+    replies: [
+      "すぐに上手くならなくても大丈夫やで。続けてること自体がえらいんよ！",
+      "昨日より少しでも進んでたら十分や！休みながらいこな〜。"
+    ],
+    options: [
+      { label: "ありがとう！", next: "thanks" },
+      { label: "また練習してみる", next: "cheer" }
+    ]
+  },
+
+  anime_cry: {
+    replies: [
+      "泣ける作品って、見終わったあともしばらく心に残るよなぁ。",
+      "感情が動く作品って、何年経っても忘れられへんことあるよね。"
+    ],
+    options: [
+      { label: "好きな作品を語りたい", next: "anime_talk" },
+      { label: "別の作品の話をする", next: "anime" }
+    ]
+  },
+
+  anime_talk: {
+    replies: [
+      "うんうん！その作品のどこが好きなん？もっと聞かせて〜！",
+      "好きな作品の話、いくらでも聞くで〜！"
+    ],
+    options: [
+      { label: "キャラクターが好き！", next: "anime_favorite" },
+      { label: "ストーリーが好き！", next: "anime_emotion" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  anime_favorite: {
+    replies: [
+      "推しキャラがいるんやね！好きなキャラってついつい目で追っちゃうよなぁ。",
+      "そのキャラのどんなところが好きなん？性格？見た目？それとも全部？"
+    ],
+    options: [
+      { label: "性格が好き！", next: "anime_talk" },
+      { label: "全部好き！", next: "anime_talk" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  car_sports: {
+    replies: [
+      "スポーツカー！低いフォルムとか、走ってる姿がかっこええよなぁ。",
+      "見た目もエンジン音も魅力的やね！"
+    ],
+    options: [
+      { label: "好きな車種がある！", next: "car_talk" },
+      { label: "ドライブの話をしよう", next: "drive" }
+    ]
+  },
+
+  car_talk: {
+    replies: [
+      "ええなぁ！好きな車について語る時間って楽しいよな！",
+      "その車のどんなところに惹かれたん？聞きたいな〜！"
+    ],
+    options: [
+      { label: "見た目が好き！", next: "car_sports" },
+      { label: "エンジンや走りが好き！", next: "car_sports" },
+      { label: "別の乗り物の話をする", next: "vehicles" }
+    ]
+  },
+
+  bike_talk: {
+    replies: [
+      "好きな車種があるんやね！バイクは一台一台個性があってええよなぁ。",
+      "おお〜！どんなところが好きなん？聞かせてほしいわ！"
+    ],
+    options: [
+      { label: "見た目が好き！", next: "drive" },
+      { label: "音や走りが好き！", next: "drive" },
+      { label: "別の乗り物の話をする", next: "vehicles" }
+    ]
+  },
+
+  drive: {
+    replies: [
+      "ドライブやツーリングって、目的地までの道のりも楽しいよなぁ。",
+      "景色のいい道をのんびり走ってみたいな〜！"
+    ],
+    options: [
+      { label: "景色のいい場所が好き！", next: "travel" },
+      { label: "走ること自体が好き！", next: "vehicles" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  music_play: {
+    replies: [
+      "楽器を演奏できるって素敵やなぁ。自分の音が出せるってかっこええ！"
+    ],
+    options: [
+      { label: "今練習してる曲がある", next: "music_practice" },
+      { label: "なかなか上達しない", next: "music_encourage" }
+    ]
+  },
+
+  music_rock: {
+    replies: [
+      "ロックってええよなぁ！聴いてるだけで元気が出る曲もあるよね！"
+    ],
+    options: [
+      { label: "ライブに行きたい", next: "music_live" },
+      { label: "好きな曲を語りたい", next: "music_talk" }
+    ]
+  },
+
+  /* もしも話・共通 */
+  shopping: {
+    replies: [
+      "好きなものを買えるって嬉しいよなぁ！でも選んでる時間も楽しそう！",
+      "うちならお部屋をもっとかわいくしたいなぁ。"
+    ],
+    options: [
+      { label: "お部屋をかわいくしたい", next: "maru_day" },
+      { label: "別のもしも話をする", next: "whatif" }
+    ]
+  },
+
+  game_build: {
+    replies: [
+      "自分だけの世界を作るのって楽しそうやなぁ！"
+    ],
+    options: [
+      { label: "もっとゲームの話", next: "game" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  goodnight: {
+    replies: [
+      "おやすみ〜！今日も一日おつかれさま。あったかくして寝るんやで〜！🌙",
+      "今日も会えて嬉しかったで！ゆっくり休んでな。いい夢見てや〜！",
+      "おやすみなさいや〜。明日もあなたに、はなまる！💮"
+    ],
+    options: [
+      { label: "また明日ね！", next: "goodnight_again" },
+      { label: "もう少しだけ話す", next: "chat" }
+    ]
+  },
+
+  goodnight_again: {
+    replies: [
+      "うん！またいつでも来てな〜！おやすみっ！🌙",
+      "待ってるで〜！今日も生きててえらい！💮"
+    ],
+    options: [
+      { label: "話題を選び直す", next: "topics" }
+    ]
+  },
+
+  /* ランダム */
+  random: {
+    replies: [
+      "なぁなぁ、もし一日だけ動物になれるとしたら何になりたい？",
+      "突然やけど、今いちばん食べたいものって何？",
+      "最近、ちょっとだけ嬉しかったことってある？",
+      "もし明日が完全なお休みやったら、何して過ごしたい？",
+      "なぁ、好きな季節ってある？うちは春と秋で迷うなぁ。"
+    ],
+    options: [
+      { label: "動物になれるなら……", next: "animal" },
+      { label: "食べたいものの話！", next: "food" },
+      { label: "ちょっと嬉しかったこと", next: "daily_good" },
+      { label: "好きな季節の話", next: "season" }
+    ]
+  },
+
+  animal: {
+    replies: [
+      "猫になって一日中ごろごろしたいなぁ。好きなときに寝て、好きなときに遊ぶんよ！",
+      "うちは小鳥になって空を飛んでみたいなぁ！"
+    ],
+    options: [
+      { label: "猫になりたい！", next: "relax" },
+      { label: "空を飛びたい！", next: "fly" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  season: {
+    replies: [
+      "うちは秋が好きかなぁ。涼しい風が気持ちよくて、お散歩したくなるんよ。",
+      "春もええなぁ。あったかくて、お花が咲いてる景色が好きやで〜。"
+    ],
+    options: [
+      { label: "自分は夏が好き！", next: "travel" },
+      { label: "冬が好き！", next: "bedtime" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  /* 選択肢共通 */
+  maru_game: {
+    replies: [
+      "うちはゲーム実況を見るのが好きそうやなぁ。横で応援する係！"
+    ],
+    options: [
+      { label: "応援してほしい！", next: "cheer" },
+      { label: "別の話にする", next: "topics" }
+    ]
+  },
+
+  music_play: {
+    replies: [
+      "楽器って素敵やなぁ！自分の好きな曲を演奏できるって憧れるわ〜！"
+    ],
+    options: [
+      { label: "練習中の曲がある", next: "music_practice" },
+      { label: "上達したい！", next: "music_encourage" }
+    ]
+  }
+
+};
+
+/* --------------------------------
+   会話画面の操作
+-------------------------------- */
+
+function addButton(label, action) {
+  const button = document.createElement("button");
+  button.className = "secondary";
+  button.textContent = label;
+  button.onclick = action;
+  $("chatOptions").appendChild(button);
 }
+
+function showTopics() {
+  $("chatOptions").innerHTML = "";
+
+  topics.forEach(topic => {
+    addButton(topic.label, () => {
+      addLog("あなた：" + topic.label);
+      showNode(topic.node);
+    });
+  });
+}
+
+function showNode(id) {
+  if (id === "topics") {
+    talk("次は何のお話しよっか〜？好きなものを選んでな！🌷");
+    showTopics();
+    return;
+  }
+
+  const node = conversations[id];
+
+  if (!node) {
+    talk("あれれ？ちょっと迷子になっちゃったみたいや……！別のお話しよか！");
+    showTopics();
+    return;
+  }
+
+  const reply = node.replies[
+    Math.floor(Math.random() * node.replies.length)
+  ];
+
+  const who = player ? player + "、" : "";
+
+  talk(who + reply);
+  addLog("まる。" + "：" + reply);
+
+  $("chatOptions").innerHTML = "";
+
+  node.options.forEach(option => {
+    addButton(option.label, () => {
+      addLog("あなた：" + option.label);
+      showNode(option.next);
+    });
+  });
+
+  addButton("🌷 別の話題を選ぶ", () => {
+    talk("ほな、次は何のお話しよっか〜？🌷");
+    showTopics();
+  });
+}
+
+/* 最初の画面 */
+if (player) {
+  talk("おかえり〜！" + player + "！今日も会えて嬉しいで〜！🌷");
+}
+
+showTopics();
+
 </script>
+
 </body>
 </html>
